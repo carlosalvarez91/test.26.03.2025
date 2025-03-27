@@ -1,5 +1,6 @@
 "use client"
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Product, Template, Row, Grid } from '../types';
 import { getProductsByIds, getAllProducts } from '../services/productService';
 import { getTemplates, saveGrid } from '../services/templateService';
@@ -33,19 +34,18 @@ export const GridProvider = ({ children }: { children: ReactNode }) => {
   const [availableProducts, setAvailableProducts] = useState<Product[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [grid, setGrid] = useState<Grid>({ rows: [] });
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
+  const queryClient = useQueryClient();
 
-  // Load products and templates on mount
-  useEffect(() => {
-    const fetchData = async () => {
+  // Get product IDs from URL
+  const productIds = searchParams.get('ids')?.split(',') || [];
+
+  // Use TanStack Query to fetch data
+  const { isLoading: loading } = useQuery({
+    queryKey: ['gridData', productIds],
+    queryFn: async () => {
       try {
-        setLoading(true);
-        
-        // Get product IDs from URL
-        const productIds = searchParams.get('ids')?.split(',') || [];
-        
         // If no product IDs in URL, load all products for demo purposes
         const productData = productIds.length > 0 
           ? await getProductsByIds(productIds)
@@ -59,16 +59,14 @@ export const GridProvider = ({ children }: { children: ReactNode }) => {
         // Initialize with empty grid (no rows)
         setGrid({ rows: [] });
         
-        setLoading(false);
+        return { productData, templateData };
       } catch (err) {
         setError('Failed to load data. Please try again.');
-        setLoading(false);
         console.error('Error loading data:', err);
+        throw err;
       }
-    };
-    
-    fetchData();
-  }, [searchParams]);
+    }
+  });
 
   // Add a new empty row
   const addRow = () => {
@@ -323,9 +321,13 @@ export const GridProvider = ({ children }: { children: ReactNode }) => {
         return null;
       }
       
-      setLoading(true);
-      const result = await saveGrid(grid);
-      setLoading(false);
+      const result = await queryClient.fetchQuery({
+        queryKey: ['saveGrid', grid],
+        queryFn: async () => {
+          const response = await saveGrid(grid);
+          return response;
+        },
+      });
       
       // Update grid with the new ID
       setGrid(prevGrid => ({
@@ -337,7 +339,6 @@ export const GridProvider = ({ children }: { children: ReactNode }) => {
       return result;
     } catch (err) {
       setError('Failed to save grid. Please try again.');
-      setLoading(false);
       console.error('Error saving grid:', err);
       return null;
     }
