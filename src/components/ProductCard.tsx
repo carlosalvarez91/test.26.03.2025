@@ -13,7 +13,7 @@ interface ProductCardProps {
 const ProductCard = forwardRef<HTMLDivElement, ProductCardProps>(
   ({ product, isDragging, source, rowId }, ref) => {
     return (
-      <div 
+      <div
         ref={ref}
         className={`
           relative flex flex-col p-2 border rounded-md shadow-sm bg-white
@@ -25,11 +25,7 @@ const ProductCard = forwardRef<HTMLDivElement, ProductCardProps>(
         data-row-id={rowId}
       >
         <div className="relative w-full aspect-[3/4] overflow-hidden rounded-md mb-2">
-          <img 
-            src={product.imageUrl} 
-            alt={product.name} 
-            className="w-full h-full object-cover"
-          />
+          <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
         </div>
         <h3 className="font-medium text-sm">{product.name}</h3>
         <p className="text-sm text-gray-700">{product.price}</p>
@@ -49,21 +45,14 @@ interface DraggableProductCardProps {
 }
 
 export const DraggableProductCard = ({ product, source, rowId }: DraggableProductCardProps) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ 
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: product.id,
     data: {
       type: 'product',
       product,
       source,
-      rowId
-    }
+      rowId,
+    },
   });
 
   const style = {
@@ -72,11 +61,11 @@ export const DraggableProductCard = ({ product, source, rowId }: DraggableProduc
   };
 
   return (
-    <div 
-      ref={setNodeRef} 
+    <div
+      ref={setNodeRef}
       style={style}
       className="touch-manipulation"
-      {...attributes} 
+      {...attributes}
       {...listeners}
     >
       <ProductCard product={product} isDragging={isDragging} source={source} rowId={rowId} />

@@ -1,7 +1,7 @@
-"use client"
+'use client';
 import { useState } from 'react';
-import { 
-  DndContext, 
+import {
+  DndContext,
   DragOverlay,
   closestCenter,
   KeyboardSensor,
@@ -11,7 +11,7 @@ import {
   DragStartEvent,
   DragEndEvent,
   DragOverEvent,
-  MeasuringStrategy
+  MeasuringStrategy,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -25,18 +25,18 @@ import ProductCard, { DraggableProductCard } from './ProductCard';
 import { Product } from '../types';
 
 const GridEditor = () => {
-  const { 
+  const {
     availableProducts,
-    grid, 
-    templates, 
-    loading, 
-    error, 
+    grid,
+    templates,
+    loading,
+    error,
     zoomLevel,
     setZoomLevel,
     addRow,
     moveRow,
     moveProduct,
-    saveCurrentGrid
+    saveCurrentGrid,
   } = useGridContext();
 
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -59,15 +59,15 @@ const GridEditor = () => {
     const { active } = event;
     console.log('Drag start:', active.id, active.data.current);
     setActiveId(active.id as string);
-    
+
     // Store the active item data
     if (active.data.current?.type === 'row') {
       setActiveItem({ type: 'row', row: active.data.current.row });
     } else if (active.data.current?.type === 'product') {
-      setActiveItem({ 
-        type: 'product', 
+      setActiveItem({
+        type: 'product',
         product: active.data.current.product,
-        source: active.data.current.source
+        source: active.data.current.source,
       });
     }
   };
@@ -75,25 +75,30 @@ const GridEditor = () => {
   // Handle drag over for product sorting within rows
   const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
-    console.log('Drag over:', { activeId: active.id, overId: over?.id, activeData: active.data.current, overData: over?.data.current });
-    
+    console.log('Drag over:', {
+      activeId: active.id,
+      overId: over?.id,
+      activeData: active.data.current,
+      overData: over?.data.current,
+    });
+
     if (!over || !over.data.current) return;
-    
+
     // Skip if it's a row being dragged
     if (active.data.current?.type === 'row') return;
-    
+
     const activeId = active.id as string;
     const overId = over.id as string;
-    
+
     // Skip if dragging over itself
     if (activeId === overId) return;
-    
+
     // If dragging a product over a row
     if (over.data.current.type === 'row') {
       // Handle this case in dragEnd
       return;
     }
-    
+
     // If dragging a product over another product
     if (over.data.current.type === 'product') {
       // Handle in dragEnd
@@ -104,23 +109,28 @@ const GridEditor = () => {
   // Handle drag end
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    console.log('Drag end:', { activeId: active.id, overId: over?.id, activeData: active.data.current, overData: over?.data.current });
-    
+    console.log('Drag end:', {
+      activeId: active.id,
+      overId: over?.id,
+      activeData: active.data.current,
+      overData: over?.data.current,
+    });
+
     if (!over) {
       setActiveId(null);
       setActiveItem(null);
       return;
     }
-    
+
     const activeId = active.id as string;
     const overId = over.id as string;
-    
+
     // Handle row reordering
     if (active.data.current?.type === 'row' && over.data.current?.type === 'row') {
       console.log('Row reordering');
       const activeIndex = grid.rows.findIndex(row => row.id === activeId);
       const overIndex = grid.rows.findIndex(row => row.id === overId);
-      
+
       if (activeIndex !== overIndex) {
         moveRow(activeIndex, overIndex);
       }
@@ -131,7 +141,7 @@ const GridEditor = () => {
       const productId = activeId;
       const sourceType = active.data.current.source;
       let sourceRowId: string | null = null;
-      
+
       // Determine source (available products or a row)
       if (sourceType === 'available') {
         console.log('Source: available products');
@@ -140,11 +150,11 @@ const GridEditor = () => {
         console.log('Source: row', active.data.current.rowId);
         sourceRowId = active.data.current.rowId;
       }
-      
+
       // Determine destination
       let destinationRowId: string | null = null;
       let destinationIndex: number | undefined = undefined;
-      
+
       if (over.data.current?.type === 'row') {
         // Dropping onto a row
         console.log('Destination: row', overId);
@@ -161,10 +171,11 @@ const GridEditor = () => {
           // Dropping onto a row product
           console.log('Destination: row product', over.data.current.rowId);
           destinationRowId = over.data.current.rowId;
-          const overProductIndex = grid.rows
-            .find(row => row.id === over.data.current?.rowId)
-            ?.products.findIndex(p => p.id === overId) ?? -1;
-          
+          const overProductIndex =
+            grid.rows
+              .find(row => row.id === over.data.current?.rowId)
+              ?.products.findIndex(p => p.id === overId) ?? -1;
+
           if (overProductIndex !== -1) {
             console.log('Destination index:', overProductIndex);
             destinationIndex = overProductIndex;
@@ -175,12 +186,17 @@ const GridEditor = () => {
         console.log('Destination: available products (container)');
         destinationRowId = null;
       }
-      
-      console.log('Calling moveProduct with:', { sourceRowId, destinationRowId, productId, destinationIndex });
+
+      console.log('Calling moveProduct with:', {
+        sourceRowId,
+        destinationRowId,
+        productId,
+        destinationIndex,
+      });
       // Move the product
       moveProduct(sourceRowId, destinationRowId, productId, destinationIndex);
     }
-    
+
     setActiveId(null);
     setActiveItem(null);
   };
@@ -190,19 +206,19 @@ const GridEditor = () => {
     // Check if all rows have templates assigned
     const hasUnassignedTemplates = grid.rows.some(row => row.templateId === null);
     const hasEmptyRows = grid.rows.some(row => row.products.length === 0);
-    
+
     if (hasUnassignedTemplates) {
       alert('All rows must have a template assigned before saving.');
       return;
     }
-    
+
     if (hasEmptyRows) {
       alert('All rows must have at least one product before saving.');
       return;
     }
-    
+
     const result = await saveCurrentGrid();
-    
+
     if (result) {
       alert(`Grid saved successfully! ID: ${result.id}`);
     }
@@ -212,11 +228,11 @@ const GridEditor = () => {
   const handleZoomIn = () => {
     setZoomLevel(Math.min(zoomLevel + 0.1, 2));
   };
-  
+
   const handleZoomOut = () => {
     setZoomLevel(Math.max(zoomLevel - 0.1, 0.5));
   };
-  
+
   const handleResetZoom = () => {
     setZoomLevel(1);
   };
@@ -229,7 +245,7 @@ const GridEditor = () => {
           Create and organize product rows with different alignment templates
         </p>
       </header>
-      
+
       {loading ? (
         <div className="flex justify-center items-center h-64">
           <div className="text-black"> Loading...</div>
@@ -247,8 +263,8 @@ const GridEditor = () => {
           onDragEnd={handleDragEnd}
           measuring={{
             droppable: {
-              strategy: MeasuringStrategy.Always
-            }
+              strategy: MeasuringStrategy.Always,
+            },
           }}
         >
           <div className="flex flex-col lg:flex-row gap-6">
@@ -256,7 +272,7 @@ const GridEditor = () => {
             <div className="lg:w-1/3">
               <div className="bg-white border rounded-lg p-4 mb-4">
                 <h2 className="text-xl font-semibold mb-4">Available Products</h2>
-                <div 
+                <div
                   id="available-products"
                   className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-3"
                   data-type="available-products"
@@ -264,13 +280,10 @@ const GridEditor = () => {
                 >
                   {availableProducts.map(product => (
                     <div key={product.id}>
-                      <DraggableProductCard 
-                        product={product} 
-                        source="available" 
-                      />
+                      <DraggableProductCard product={product} source="available" />
                     </div>
                   ))}
-                  
+
                   {availableProducts.length === 0 && (
                     <div className="col-span-full py-8 text-center text-gray-500">
                       No available products
@@ -278,74 +291,83 @@ const GridEditor = () => {
                   )}
                 </div>
               </div>
-            
             </div>
-            
+
             {/* Right side - Grid Editor */}
             <div className="lg:w-2/3 flex flex-col gap-4">
               <div className="bg-white border rounded-lg p-6 overflow-auto">
-                
-
                 <div className="flex flex-row justify-end items-center gap-3 mb-4">
-                <button
-                  onClick={addRow}
-                  className="bg-black text-white px-4 py-2 rounded-md w-34 hover:bg-gray-700"
-                >
-                  Add New Row
-                </button>
-                <button
-                  onClick={handleSave}
-                  className="bg-black text-white px-4 py-2 rounded-md w-34 hover:bg-gray-700"
-                >
-                  Save Grid
-                </button>
-                
-                <div className="">
-                  <div className="flex items-center">
-                    <button
-                      onClick={handleZoomOut}
-                      className="bg-black p-2 rounded-l-md hover:bg-gray-700"
-                      aria-label="Zoom out"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                      </svg>
-                    </button>
-                    <button
-                      onClick={handleResetZoom}
-                      className="bg-black px-2 py-2 border-l border-r border-gray-300"
-                    >
-                      {Math.round(zoomLevel * 100)}%
-                    </button>
-                    <button
-                      onClick={handleZoomIn}
-                      className="bg-black p-2 rounded-r-md hover:bg-gray-700"
-                      aria-label="Zoom in"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                      </svg>
-                    </button>
+                  <button
+                    onClick={addRow}
+                    className="bg-black text-white px-4 py-2 rounded-md w-34 hover:bg-gray-700"
+                  >
+                    Add New Row
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    className="bg-black text-white px-4 py-2 rounded-md w-34 hover:bg-gray-700"
+                  >
+                    Save Grid
+                  </button>
+
+                  <div className="">
+                    <div className="flex items-center">
+                      <button
+                        onClick={handleZoomOut}
+                        className="bg-black p-2 rounded-l-md hover:bg-gray-700"
+                        aria-label="Zoom out"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                      </button>
+                      <button
+                        onClick={handleResetZoom}
+                        className="bg-black px-2 py-2 border-l border-r border-gray-300"
+                      >
+                        {Math.round(zoomLevel * 100)}%
+                      </button>
+                      <button
+                        onClick={handleZoomIn}
+                        className="bg-black p-2 rounded-r-md hover:bg-gray-700"
+                        aria-label="Zoom in"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <line x1="12" y1="5" x2="12" y2="19"></line>
+                          <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-
-
-
-
-
-
-
-                
-                <div 
+                <div
                   className="grid-editor-container"
                   style={{
                     transform: `scale(${zoomLevel})`,
                     transformOrigin: 'top left',
                     minHeight: '500px',
-                    transition: 'transform 0.2s ease-in-out'
+                    transition: 'transform 0.2s ease-in-out',
                   }}
                 >
                   <SortableContext
@@ -353,15 +375,10 @@ const GridEditor = () => {
                     strategy={verticalListSortingStrategy}
                   >
                     {grid.rows.map((row, index) => (
-                      <GridRow
-                        key={row.id}
-                        row={row}
-                        index={index}
-                        templates={templates}
-                      />
+                      <GridRow key={row.id} row={row} index={index} templates={templates} />
                     ))}
                   </SortableContext>
-                  
+
                   {grid.rows.length === 0 && (
                     <div className="text-center py-12 text-gray-500 border-2 border-dashed rounded-md">
                       <p className="mb-4">No rows yet. Click "Add New Row" to get started.</p>
@@ -370,14 +387,14 @@ const GridEditor = () => {
                   )}
                 </div>
               </div>
-              
+
               <div className="text-sm text-gray-600">
                 <p>Drag and drop products between rows. Each row can have 1-3 products.</p>
                 <p>Assign a template to each row to control alignment.</p>
               </div>
             </div>
           </div>
-          
+
           <DragOverlay>
             {activeId && activeItem ? (
               activeItem.type === 'row' ? (

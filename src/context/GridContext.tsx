@@ -1,4 +1,4 @@
-"use client"
+'use client';
 import { createContext, useContext, useState, ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Product, Template, Row, Grid } from '../types';
@@ -18,8 +18,8 @@ interface GridContextProps {
   moveRow: (fromIndex: number, toIndex: number) => void;
   updateRowTemplate: (rowId: string, templateId: string) => void;
   moveProduct: (
-    sourceRowId: string | null, 
-    destinationRowId: string | null, 
+    sourceRowId: string | null,
+    destinationRowId: string | null,
     productId: string,
     destinationIndex?: number
   ) => void;
@@ -47,25 +47,24 @@ export const GridProvider = ({ children }: { children: ReactNode }) => {
     queryFn: async () => {
       try {
         // If no product IDs in URL, load all products for demo purposes
-        const productData = productIds.length > 0 
-          ? await getProductsByIds(productIds)
-          : await getAllProducts();
-        
+        const productData =
+          productIds.length > 0 ? await getProductsByIds(productIds) : await getAllProducts();
+
         const templateData = await getTemplates();
-        
+
         setAvailableProducts(productData);
         setTemplates(templateData);
-        
+
         // Initialize with empty grid (no rows)
         setGrid({ rows: [] });
-        
+
         return { productData, templateData };
       } catch (err) {
         setError('Failed to load data. Please try again.');
         console.error('Error loading data:', err);
         throw err;
       }
-    }
+    },
   });
 
   // Add a new empty row
@@ -77,9 +76,9 @@ export const GridProvider = ({ children }: { children: ReactNode }) => {
         {
           id: `row-${Date.now()}`,
           products: [],
-          templateId: null
-        }
-      ]
+          templateId: null,
+        },
+      ],
     }));
   };
 
@@ -89,16 +88,16 @@ export const GridProvider = ({ children }: { children: ReactNode }) => {
       // Get products from the row being removed
       const rowToRemove = prevGrid.rows.find(row => row.id === rowId);
       const productsToReturn = rowToRemove?.products || [];
-      
+
       // Add the products back to available products
       setAvailableProducts(prev => [...prev, ...productsToReturn]);
-      
+
       // Filter out the row to remove
       const updatedRows = prevGrid.rows.filter(row => row.id !== rowId);
-      
+
       return {
         ...prevGrid,
-        rows: updatedRows
+        rows: updatedRows,
       };
     });
   };
@@ -106,15 +105,15 @@ export const GridProvider = ({ children }: { children: ReactNode }) => {
   // Move a row from one position to another
   const moveRow = (fromIndex: number, toIndex: number) => {
     if (fromIndex === toIndex) return;
-    
+
     setGrid(prevGrid => {
       const newRows = [...prevGrid.rows];
       const [movedRow] = newRows.splice(fromIndex, 1);
       newRows.splice(toIndex, 0, movedRow);
-      
+
       return {
         ...prevGrid,
-        rows: newRows
+        rows: newRows,
       };
     });
   };
@@ -123,23 +122,24 @@ export const GridProvider = ({ children }: { children: ReactNode }) => {
   const updateRowTemplate = (rowId: string, templateId: string) => {
     setGrid(prevGrid => ({
       ...prevGrid,
-      rows: prevGrid.rows.map(row => 
-        row.id === rowId 
-          ? { ...row, templateId } 
-          : row
-      )
+      rows: prevGrid.rows.map(row => (row.id === rowId ? { ...row, templateId } : row)),
     }));
   };
 
   // Move a product from available products to a row, or between rows
   const moveProduct = (
-    sourceRowId: string | null, 
-    destinationRowId: string | null, 
+    sourceRowId: string | null,
+    destinationRowId: string | null,
     productId: string,
     destinationIndex?: number
   ) => {
-    console.log('moveProduct called with:', { sourceRowId, destinationRowId, productId, destinationIndex });
-    
+    console.log('moveProduct called with:', {
+      sourceRowId,
+      destinationRowId,
+      productId,
+      destinationIndex,
+    });
+
     // Case 1: Moving from available products to a row
     if (sourceRowId === null && destinationRowId !== null) {
       console.log('Case 1: Moving from available products to a row');
@@ -149,11 +149,11 @@ export const GridProvider = ({ children }: { children: ReactNode }) => {
         console.log('Product not found in available products');
         return;
       }
-      
+
       // Get the product
       const product = availableProducts[productIndex];
       console.log('Found product:', product);
-      
+
       // Check if product already exists in the destination row
       const destRowIndex = grid.rows.findIndex(row => row.id === destinationRowId);
       if (destRowIndex !== -1) {
@@ -163,31 +163,31 @@ export const GridProvider = ({ children }: { children: ReactNode }) => {
           return;
         }
       }
-      
+
       // Remove from available products
       setAvailableProducts(prev => {
         console.log('Removing product from available products');
         return prev.filter(p => p.id !== productId);
       });
-      
+
       // Add to destination row
       setGrid(prevGrid => {
         console.log('Adding product to destination row');
         const newRows = [...prevGrid.rows];
         const destRowIndex = newRows.findIndex(row => row.id === destinationRowId);
-        
+
         if (destRowIndex === -1) {
           console.log('Destination row not found');
           return prevGrid;
         }
-        
+
         // Check again if product already exists in the destination row (for safety)
         const productExists = newRows[destRowIndex].products.some(p => p.id === productId);
         if (productExists) {
           console.log('Product already exists in destination row (double-check), skipping');
           return prevGrid;
         }
-        
+
         // Insert at specified index or append to end
         if (destinationIndex !== undefined) {
           console.log('Inserting at specific index:', destinationIndex);
@@ -196,16 +196,16 @@ export const GridProvider = ({ children }: { children: ReactNode }) => {
           console.log('Appending to end of row');
           newRows[destRowIndex].products.push(product);
         }
-        
+
         // If the row now has more than 3 products, move excess to available products
         if (newRows[destRowIndex].products.length > 3) {
           const excessProducts = newRows[destRowIndex].products.splice(3);
           setAvailableProducts(prev => [...prev, ...excessProducts]);
         }
-        
+
         return {
           ...prevGrid,
-          rows: newRows
+          rows: newRows,
         };
       });
     }
@@ -216,32 +216,32 @@ export const GridProvider = ({ children }: { children: ReactNode }) => {
         console.log('Removing product from source row');
         const newRows = [...prevGrid.rows];
         const sourceRowIndex = newRows.findIndex(row => row.id === sourceRowId);
-        
+
         if (sourceRowIndex === -1) {
           console.log('Source row not found');
           return prevGrid;
         }
-        
+
         // Find the product in the source row
         const productIndex = newRows[sourceRowIndex].products.findIndex(p => p.id === productId);
         if (productIndex === -1) {
           console.log('Product not found in source row');
           return prevGrid;
         }
-        
+
         // Remove from source row
         const [product] = newRows[sourceRowIndex].products.splice(productIndex, 1);
         console.log('Removed product from source row:', product);
-        
+
         // Add to available products
         setAvailableProducts(prev => {
           console.log('Adding product to available products');
           return [...prev, product];
         });
-        
+
         return {
           ...prevGrid,
-          rows: newRows
+          rows: newRows,
         };
       });
     }
@@ -251,34 +251,34 @@ export const GridProvider = ({ children }: { children: ReactNode }) => {
       setGrid(prevGrid => {
         console.log('Moving product between rows');
         const newRows = [...prevGrid.rows];
-        
+
         // Find source and destination rows
         const sourceRowIndex = newRows.findIndex(row => row.id === sourceRowId);
         const destinationRowIndex = newRows.findIndex(row => row.id === destinationRowId);
-        
+
         if (sourceRowIndex === -1 || destinationRowIndex === -1) {
           console.log('Source or destination row not found');
           return prevGrid;
         }
-        
+
         // Find the product in the source row
         const productIndex = newRows[sourceRowIndex].products.findIndex(p => p.id === productId);
         if (productIndex === -1) {
           console.log('Product not found in source row');
           return prevGrid;
         }
-        
+
         // Remove from source row
         const [product] = newRows[sourceRowIndex].products.splice(productIndex, 1);
         console.log('Removed product from source row:', product);
-        
+
         // Check if product already exists in the destination row
         const productExists = newRows[destinationRowIndex].products.some(p => p.id === productId);
         if (productExists) {
           console.log('Product already exists in destination row, skipping');
           return prevGrid;
         }
-        
+
         // Insert at specified index or append to end
         if (destinationIndex !== undefined) {
           console.log('Inserting at specific index:', destinationIndex);
@@ -287,20 +287,22 @@ export const GridProvider = ({ children }: { children: ReactNode }) => {
           console.log('Appending to end of row');
           newRows[destinationRowIndex].products.push(product);
         }
-        
+
         // If the destination row now has more than 3 products, move excess to available products
         if (newRows[destinationRowIndex].products.length > 3) {
-          console.log('Destination row has more than 3 products, moving excess to available products');
+          console.log(
+            'Destination row has more than 3 products, moving excess to available products'
+          );
           const excessProducts = newRows[destinationRowIndex].products.splice(3);
           setAvailableProducts(prev => {
             console.log('Adding excess products to available products');
             return [...prev, ...excessProducts];
           });
         }
-        
+
         return {
           ...prevGrid,
-          rows: newRows
+          rows: newRows,
         };
       });
     }
@@ -310,17 +312,15 @@ export const GridProvider = ({ children }: { children: ReactNode }) => {
   const saveCurrentGrid = async () => {
     try {
       // Validate grid
-      const isValid = grid.rows.every(row => 
-        row.products.length > 0 && 
-        row.products.length <= 3 && 
-        row.templateId !== null
+      const isValid = grid.rows.every(
+        row => row.products.length > 0 && row.products.length <= 3 && row.templateId !== null
       );
-      
+
       if (!isValid) {
         setError('All rows must have 1-3 products and a template assigned');
         return null;
       }
-      
+
       const result = await queryClient.fetchQuery({
         queryKey: ['saveGrid', grid],
         queryFn: async () => {
@@ -328,13 +328,13 @@ export const GridProvider = ({ children }: { children: ReactNode }) => {
           return response;
         },
       });
-      
+
       // Update grid with the new ID
       setGrid(prevGrid => ({
         ...prevGrid,
-        id: result.id
+        id: result.id,
       }));
-      
+
       setError(null);
       return result;
     } catch (err) {
@@ -359,7 +359,7 @@ export const GridProvider = ({ children }: { children: ReactNode }) => {
         updateRowTemplate,
         moveProduct,
         saveCurrentGrid,
-        setZoomLevel
+        setZoomLevel,
       }}
     >
       {children}
