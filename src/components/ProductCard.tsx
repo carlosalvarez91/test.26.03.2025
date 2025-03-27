@@ -2,11 +2,14 @@ import { forwardRef } from 'react';
 import { Product } from '../types';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { SOURCE_TYPES, ITEM_TYPES } from '../constants';
+
+type SourceType = typeof SOURCE_TYPES[keyof typeof SOURCE_TYPES];
 
 interface ProductCardProps {
   product: Product;
   isDragging?: boolean;
-  source?: 'available' | 'row';
+  source?: SourceType;
   rowId?: string;
 }
 
@@ -40,7 +43,7 @@ export default ProductCard;
 
 interface DraggableProductCardProps {
   product: Product;
-  source: 'available' | 'row';
+  source: SourceType;
   rowId?: string;
 }
 
@@ -48,7 +51,7 @@ export const DraggableProductCard = ({ product, source, rowId }: DraggableProduc
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: product.id,
     data: {
-      type: 'product',
+      type: ITEM_TYPES.PRODUCT,
       product,
       source,
       rowId,

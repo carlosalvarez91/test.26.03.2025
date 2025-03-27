@@ -1,10 +1,17 @@
 'use client';
 import { createContext, useContext, useState, ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Product, Template, Row, Grid } from '../types';
+import { Product, Template, Grid } from '../types';
 import { getProductsByIds, getAllProducts } from '../services/productService';
 import { getTemplates, saveGrid } from '../services/templateService';
 import { useSearchParams } from 'next/navigation';
+import { 
+  SOURCE_TYPES, 
+  ITEM_TYPES, 
+  QUERY_KEYS, 
+  MAX_PRODUCTS_PER_ROW, 
+  ERROR_MESSAGES 
+} from '../constants';
 
 interface GridContextProps {
   availableProducts: Product[];
@@ -43,7 +50,7 @@ export const GridProvider = ({ children }: { children: ReactNode }) => {
 
   // Use TanStack Query to fetch data
   const { isLoading: loading } = useQuery({
-    queryKey: ['gridData', productIds],
+    queryKey: [QUERY_KEYS.GRID_DATA, productIds],
     queryFn: async () => {
       try {
         // If no product IDs in URL, load all products for demo purposes
@@ -60,7 +67,7 @@ export const GridProvider = ({ children }: { children: ReactNode }) => {
 
         return { productData, templateData };
       } catch (err) {
-        setError('Failed to load data. Please try again.');
+        setError(ERROR_MESSAGES.LOAD_DATA_FAILED);
         console.error('Error loading data:', err);
         throw err;
       }
@@ -181,9 +188,9 @@ export const GridProvider = ({ children }: { children: ReactNode }) => {
           newRows[destRowIndex].products.push(product);
         }
 
-        // If the row now has more than 3 products, move excess to available products
-        if (newRows[destRowIndex].products.length > 3) {
-          const excessProducts = newRows[destRowIndex].products.splice(3);
+        // If the row now has more than MAX_PRODUCTS_PER_ROW products, move excess to available products
+        if (newRows[destRowIndex].products.length > MAX_PRODUCTS_PER_ROW) {
+          const excessProducts = newRows[destRowIndex].products.splice(MAX_PRODUCTS_PER_ROW);
           setAvailableProducts(prev => [...prev, ...excessProducts]);
         }
 
@@ -258,9 +265,9 @@ export const GridProvider = ({ children }: { children: ReactNode }) => {
           newRows[destinationRowIndex].products.push(product);
         }
 
-        // If the destination row now has more than 3 products, move excess to available products
-        if (newRows[destinationRowIndex].products.length > 3) {
-          const excessProducts = newRows[destinationRowIndex].products.splice(3);
+        // If the destination row now has more than MAX_PRODUCTS_PER_ROW products, move excess to available products
+        if (newRows[destinationRowIndex].products.length > MAX_PRODUCTS_PER_ROW) {
+          const excessProducts = newRows[destinationRowIndex].products.splice(MAX_PRODUCTS_PER_ROW);
           setAvailableProducts(prev => {
             return [...prev, ...excessProducts];
           });
@@ -279,16 +286,16 @@ export const GridProvider = ({ children }: { children: ReactNode }) => {
     try {
       // Validate grid
       const isValid = grid.rows.every(
-        row => row.products.length > 0 && row.products.length <= 3 && row.templateId !== null
+        row => row.products.length > 0 && row.products.length <= MAX_PRODUCTS_PER_ROW && row.templateId !== null
       );
 
       if (!isValid) {
-        setError('All rows must have 1-3 products and a template assigned');
+        setError(ERROR_MESSAGES.ROW_VALIDATION);
         return null;
       }
 
       const result = await queryClient.fetchQuery({
-        queryKey: ['saveGrid', grid],
+        queryKey: [QUERY_KEYS.SAVE_GRID, grid],
         queryFn: async () => {
           const response = await saveGrid(grid);
           return response;
@@ -304,7 +311,7 @@ export const GridProvider = ({ children }: { children: ReactNode }) => {
       setError(null);
       return result;
     } catch (err) {
-      setError('Failed to save grid. Please try again.');
+      setError(ERROR_MESSAGES.SAVE_GRID_FAILED);
       console.error('Error saving grid:', err);
       return null;
     }

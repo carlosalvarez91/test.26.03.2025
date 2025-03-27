@@ -18,11 +18,16 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-
 import { useGridContext } from '../context/GridContext';
 import GridRow from './GridRow';
 import ProductCard, { DraggableProductCard } from './ProductCard';
 import { Product } from '../types';
+import { 
+  SOURCE_TYPES, 
+  ITEM_TYPES, 
+  ZOOM_LEVELS, 
+  ERROR_MESSAGES 
+} from '../constants';
 
 const GridEditor = () => {
   const {
@@ -40,7 +45,12 @@ const GridEditor = () => {
   } = useGridContext();
 
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [activeItem, setActiveItem] = useState<any | null>(null);
+  const [activeItem, setActiveItem] = useState<{
+    type: string;
+    row?: any;
+    product?: Product;
+    source?: string;
+  } | null>(null);
 
   // Set up sensors for drag and drop
   const sensors = useSensors(
@@ -60,11 +70,11 @@ const GridEditor = () => {
     setActiveId(active.id as string);
 
     // Store the active item data
-    if (active.data.current?.type === 'row') {
-      setActiveItem({ type: 'row', row: active.data.current.row });
-    } else if (active.data.current?.type === 'product') {
+    if (active.data.current?.type === ITEM_TYPES.ROW) {
+      setActiveItem({ type: ITEM_TYPES.ROW, row: active.data.current.row });
+    } else if (active.data.current?.type === ITEM_TYPES.PRODUCT) {
       setActiveItem({
-        type: 'product',
+        type: ITEM_TYPES.PRODUCT,
         product: active.data.current.product,
         source: active.data.current.source,
       });
@@ -78,7 +88,7 @@ const GridEditor = () => {
     if (!over || !over.data.current) return;
 
     // Skip if it's a row being dragged
-    if (active.data.current?.type === 'row') return;
+    if (active.data.current?.type === ITEM_TYPES.ROW) return;
 
     const activeId = active.id as string;
     const overId = over.id as string;
@@ -87,13 +97,13 @@ const GridEditor = () => {
     if (activeId === overId) return;
 
     // If dragging a product over a row
-    if (over.data.current.type === 'row') {
+    if (over.data.current.type === ITEM_TYPES.ROW) {
       // Handle this case in dragEnd
       return;
     }
 
     // If dragging a product over another product
-    if (over.data.current.type === 'product') {
+    if (over.data.current.type === ITEM_TYPES.PRODUCT) {
       // Handle in dragEnd
       return;
     }
@@ -113,7 +123,7 @@ const GridEditor = () => {
     const overId = over.id as string;
 
     // Handle row reordering
-    if (active.data.current?.type === 'row' && over.data.current?.type === 'row') {
+    if (active.data.current?.type === ITEM_TYPES.ROW && over.data.current?.type === ITEM_TYPES.ROW) {
       const activeIndex = grid.rows.findIndex(row => row.id === activeId);
       const overIndex = grid.rows.findIndex(row => row.id === overId);
 
@@ -122,15 +132,15 @@ const GridEditor = () => {
       }
     }
     // Handle product moving
-    else if (active.data.current?.type === 'product') {
+    else if (active.data.current?.type === ITEM_TYPES.PRODUCT) {
       const productId = activeId;
       const sourceType = active.data.current.source;
       let sourceRowId: string | null = null;
 
       // Determine source (available products or a row)
-      if (sourceType === 'available') {
+      if (sourceType === SOURCE_TYPES.AVAILABLE) {
         sourceRowId = null;
-      } else if (sourceType === 'row') {
+      } else if (sourceType === SOURCE_TYPES.ROW) {
         sourceRowId = active.data.current.rowId;
       }
 
@@ -138,14 +148,14 @@ const GridEditor = () => {
       let destinationRowId: string | null = null;
       let destinationIndex: number | undefined = undefined;
 
-      if (over.data.current?.type === 'row') {
+      if (over.data.current?.type === ITEM_TYPES.ROW) {
         // Dropping onto a row
         destinationRowId = overId;
         // Append to end of row
         destinationIndex = undefined;
-      } else if (over.data.current?.type === 'product') {
+      } else if (over.data.current?.type === ITEM_TYPES.PRODUCT) {
         // Dropping onto another product
-        if (over.data.current.source === 'available') {
+        if (over.data.current.source === SOURCE_TYPES.AVAILABLE) {
           // Dropping onto an available product - return to available
           destinationRowId = null;
         } else {
@@ -160,7 +170,7 @@ const GridEditor = () => {
             destinationIndex = overProductIndex;
           }
         }
-      } else if (over.id === 'available-products') {
+      } else if (over.id === ITEM_TYPES.AVAILABLE_PRODUCTS) {
         // Dropping back to available products
         destinationRowId = null;
       }
@@ -179,12 +189,12 @@ const GridEditor = () => {
     const hasEmptyRows = grid.rows.some(row => row.products.length === 0);
 
     if (hasUnassignedTemplates) {
-      alert('All rows must have a template assigned before saving.');
+      alert(ERROR_MESSAGES.TEMPLATE_REQUIRED);
       return;
     }
 
     if (hasEmptyRows) {
-      alert('All rows must have at least one product before saving.');
+      alert(ERROR_MESSAGES.PRODUCTS_REQUIRED);
       return;
     }
 
@@ -197,15 +207,15 @@ const GridEditor = () => {
 
   // Handle zoom in/out
   const handleZoomIn = () => {
-    setZoomLevel(Math.min(zoomLevel + 0.1, 2));
+    setZoomLevel(Math.min(zoomLevel + ZOOM_LEVELS.STEP, ZOOM_LEVELS.MAX));
   };
 
   const handleZoomOut = () => {
-    setZoomLevel(Math.max(zoomLevel - 0.1, 0.5));
+    setZoomLevel(Math.max(zoomLevel - ZOOM_LEVELS.STEP, ZOOM_LEVELS.MIN));
   };
 
   const handleResetZoom = () => {
-    setZoomLevel(1);
+    setZoomLevel(ZOOM_LEVELS.DEFAULT);
   };
 
   return (
@@ -368,20 +378,22 @@ const GridEditor = () => {
 
           <DragOverlay>
             {activeId && activeItem ? (
-              activeItem.type === 'row' ? (
+              activeItem.type === ITEM_TYPES.ROW ? (
                 <div className="opacity-80 bg-white border rounded-lg p-4 shadow-xl">
                   <div className="flex gap-4">
                     {activeItem.row.products.map((product: Product) => (
-                      <div key={product.id} className="w-1/3 max-w-[200px]">
+                      <div key={product.id} className="w-24">
                         <ProductCard product={product} />
                       </div>
                     ))}
                   </div>
                 </div>
               ) : (
-                <div className="w-[150px]">
-                  <ProductCard product={activeItem.product} isDragging={true} />
-                </div>
+                activeItem.product && (
+                  <div className="opacity-80 scale-105 shadow-xl">
+                    <ProductCard product={activeItem.product} />
+                  </div>
+                )
               )
             ) : null}
           </DragOverlay>

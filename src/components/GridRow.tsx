@@ -3,6 +3,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Row, Template } from '../types';
 import { DraggableProductCard } from './ProductCard';
 import { useGridContext } from '../context/GridContext';
+import { ITEM_TYPES, SOURCE_TYPES } from '../constants';
 
 interface GridRowProps {
   row: Row;
@@ -16,7 +17,7 @@ const GridRow = ({ row, index, templates }: GridRowProps) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: row.id,
     data: {
-      type: 'row',
+      type: ITEM_TYPES.ROW,
       row,
     },
   });
@@ -55,7 +56,7 @@ const GridRow = ({ row, index, templates }: GridRowProps) => {
         transition-all duration-200
       `}
       data-row-id={row.id}
-      data-type="row"
+      data-type={ITEM_TYPES.ROW}
     >
       <div className="flex items-center justify-between mb-3">
         <div
@@ -103,7 +104,7 @@ const GridRow = ({ row, index, templates }: GridRowProps) => {
       <div className={`flex gap-4 ${getAlignmentClass()}`}>
         {row.products.map(product => (
           <div key={product.id} className="w-1/3 max-w-[200px]">
-            <DraggableProductCard product={product} source="row" rowId={row.id} />
+            <DraggableProductCard product={product} source={SOURCE_TYPES.ROW} rowId={row.id} />
           </div>
         ))}
 
