@@ -133,67 +133,51 @@ export const GridProvider = ({ children }: { children: ReactNode }) => {
     productId: string,
     destinationIndex?: number
   ) => {
-    console.log('moveProduct called with:', {
-      sourceRowId,
-      destinationRowId,
-      productId,
-      destinationIndex,
-    });
 
     // Case 1: Moving from available products to a row
     if (sourceRowId === null && destinationRowId !== null) {
-      console.log('Case 1: Moving from available products to a row');
       // Find the product in available products
       const productIndex = availableProducts.findIndex(p => p.id === productId);
       if (productIndex === -1) {
-        console.log('Product not found in available products');
         return;
       }
 
       // Get the product
       const product = availableProducts[productIndex];
-      console.log('Found product:', product);
 
       // Check if product already exists in the destination row
       const destRowIndex = grid.rows.findIndex(row => row.id === destinationRowId);
       if (destRowIndex !== -1) {
         const productExists = grid.rows[destRowIndex].products.some(p => p.id === productId);
         if (productExists) {
-          console.log('Product already exists in destination row, skipping');
           return;
         }
       }
 
       // Remove from available products
       setAvailableProducts(prev => {
-        console.log('Removing product from available products');
         return prev.filter(p => p.id !== productId);
       });
 
       // Add to destination row
       setGrid(prevGrid => {
-        console.log('Adding product to destination row');
         const newRows = [...prevGrid.rows];
         const destRowIndex = newRows.findIndex(row => row.id === destinationRowId);
 
         if (destRowIndex === -1) {
-          console.log('Destination row not found');
           return prevGrid;
         }
 
         // Check again if product already exists in the destination row (for safety)
         const productExists = newRows[destRowIndex].products.some(p => p.id === productId);
         if (productExists) {
-          console.log('Product already exists in destination row (double-check), skipping');
           return prevGrid;
         }
 
         // Insert at specified index or append to end
         if (destinationIndex !== undefined) {
-          console.log('Inserting at specific index:', destinationIndex);
           newRows[destRowIndex].products.splice(destinationIndex, 0, product);
         } else {
-          console.log('Appending to end of row');
           newRows[destRowIndex].products.push(product);
         }
 
@@ -211,31 +195,25 @@ export const GridProvider = ({ children }: { children: ReactNode }) => {
     }
     // Case 2: Moving from a row to available products
     else if (sourceRowId !== null && destinationRowId === null) {
-      console.log('Case 2: Moving from a row to available products');
       setGrid(prevGrid => {
-        console.log('Removing product from source row');
         const newRows = [...prevGrid.rows];
         const sourceRowIndex = newRows.findIndex(row => row.id === sourceRowId);
 
         if (sourceRowIndex === -1) {
-          console.log('Source row not found');
           return prevGrid;
         }
 
         // Find the product in the source row
         const productIndex = newRows[sourceRowIndex].products.findIndex(p => p.id === productId);
         if (productIndex === -1) {
-          console.log('Product not found in source row');
           return prevGrid;
         }
 
         // Remove from source row
         const [product] = newRows[sourceRowIndex].products.splice(productIndex, 1);
-        console.log('Removed product from source row:', product);
 
         // Add to available products
         setAvailableProducts(prev => {
-          console.log('Adding product to available products');
           return [...prev, product];
         });
 
@@ -247,9 +225,7 @@ export const GridProvider = ({ children }: { children: ReactNode }) => {
     }
     // Case 3: Moving between rows
     else if (sourceRowId !== null && destinationRowId !== null) {
-      console.log('Case 3: Moving between rows');
       setGrid(prevGrid => {
-        console.log('Moving product between rows');
         const newRows = [...prevGrid.rows];
 
         // Find source and destination rows
@@ -257,45 +233,35 @@ export const GridProvider = ({ children }: { children: ReactNode }) => {
         const destinationRowIndex = newRows.findIndex(row => row.id === destinationRowId);
 
         if (sourceRowIndex === -1 || destinationRowIndex === -1) {
-          console.log('Source or destination row not found');
           return prevGrid;
         }
 
         // Find the product in the source row
         const productIndex = newRows[sourceRowIndex].products.findIndex(p => p.id === productId);
         if (productIndex === -1) {
-          console.log('Product not found in source row');
           return prevGrid;
         }
 
         // Remove from source row
         const [product] = newRows[sourceRowIndex].products.splice(productIndex, 1);
-        console.log('Removed product from source row:', product);
 
         // Check if product already exists in the destination row
         const productExists = newRows[destinationRowIndex].products.some(p => p.id === productId);
         if (productExists) {
-          console.log('Product already exists in destination row, skipping');
           return prevGrid;
         }
 
         // Insert at specified index or append to end
         if (destinationIndex !== undefined) {
-          console.log('Inserting at specific index:', destinationIndex);
           newRows[destinationRowIndex].products.splice(destinationIndex, 0, product);
         } else {
-          console.log('Appending to end of row');
           newRows[destinationRowIndex].products.push(product);
         }
 
         // If the destination row now has more than 3 products, move excess to available products
         if (newRows[destinationRowIndex].products.length > 3) {
-          console.log(
-            'Destination row has more than 3 products, moving excess to available products'
-          );
           const excessProducts = newRows[destinationRowIndex].products.splice(3);
           setAvailableProducts(prev => {
-            console.log('Adding excess products to available products');
             return [...prev, ...excessProducts];
           });
         }

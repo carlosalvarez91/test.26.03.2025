@@ -57,7 +57,6 @@ const GridEditor = () => {
   // Handle drag start
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
-    console.log('Drag start:', active.id, active.data.current);
     setActiveId(active.id as string);
 
     // Store the active item data
@@ -75,12 +74,6 @@ const GridEditor = () => {
   // Handle drag over for product sorting within rows
   const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
-    console.log('Drag over:', {
-      activeId: active.id,
-      overId: over?.id,
-      activeData: active.data.current,
-      overData: over?.data.current,
-    });
 
     if (!over || !over.data.current) return;
 
@@ -109,12 +102,6 @@ const GridEditor = () => {
   // Handle drag end
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    console.log('Drag end:', {
-      activeId: active.id,
-      overId: over?.id,
-      activeData: active.data.current,
-      overData: over?.data.current,
-    });
 
     if (!over) {
       setActiveId(null);
@@ -127,7 +114,6 @@ const GridEditor = () => {
 
     // Handle row reordering
     if (active.data.current?.type === 'row' && over.data.current?.type === 'row') {
-      console.log('Row reordering');
       const activeIndex = grid.rows.findIndex(row => row.id === activeId);
       const overIndex = grid.rows.findIndex(row => row.id === overId);
 
@@ -137,17 +123,14 @@ const GridEditor = () => {
     }
     // Handle product moving
     else if (active.data.current?.type === 'product') {
-      console.log('Product moving');
       const productId = activeId;
       const sourceType = active.data.current.source;
       let sourceRowId: string | null = null;
 
       // Determine source (available products or a row)
       if (sourceType === 'available') {
-        console.log('Source: available products');
         sourceRowId = null;
       } else if (sourceType === 'row') {
-        console.log('Source: row', active.data.current.rowId);
         sourceRowId = active.data.current.rowId;
       }
 
@@ -157,7 +140,6 @@ const GridEditor = () => {
 
       if (over.data.current?.type === 'row') {
         // Dropping onto a row
-        console.log('Destination: row', overId);
         destinationRowId = overId;
         // Append to end of row
         destinationIndex = undefined;
@@ -165,11 +147,9 @@ const GridEditor = () => {
         // Dropping onto another product
         if (over.data.current.source === 'available') {
           // Dropping onto an available product - return to available
-          console.log('Destination: available products (product)');
           destinationRowId = null;
         } else {
           // Dropping onto a row product
-          console.log('Destination: row product', over.data.current.rowId);
           destinationRowId = over.data.current.rowId;
           const overProductIndex =
             grid.rows
@@ -177,22 +157,13 @@ const GridEditor = () => {
               ?.products.findIndex(p => p.id === overId) ?? -1;
 
           if (overProductIndex !== -1) {
-            console.log('Destination index:', overProductIndex);
             destinationIndex = overProductIndex;
           }
         }
       } else if (over.id === 'available-products') {
         // Dropping back to available products
-        console.log('Destination: available products (container)');
         destinationRowId = null;
       }
-
-      console.log('Calling moveProduct with:', {
-        sourceRowId,
-        destinationRowId,
-        productId,
-        destinationIndex,
-      });
       // Move the product
       moveProduct(sourceRowId, destinationRowId, productId, destinationIndex);
     }
